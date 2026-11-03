@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+# Build artifacts
+dist/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Media uploads (kept in Cloudinary)
+*.mp4
+*.avi
+*.mov
+

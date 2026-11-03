@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: facts_vision_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: facts_vision_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # 2. Python FastAPI + OpenCV Recognizer Service
+  recognizer:
+    build:
+      context: ./recognizer
+      dockerfile: Dockerfile
+    container_name: facts_vision_recognizer
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - REFERENCE_DIR=reference_images
+    volumes:
+      - ./recognizer/reference_images:/app/reference_images
+
+  # 3. Node.js Express API Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: facts_vision_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_NAME=facts_vision_db
+      - RECOGNIZER_SERVICE_URL=http://recognizer:8000
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - postgres
+      - recognizer
+
+volumes:
+  postgres_data:
+
