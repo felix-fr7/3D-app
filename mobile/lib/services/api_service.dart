@@ -4,39 +4,55 @@ import 'package:http/http.dart' as http;
 import '../models/recognition_response.dart';
 
 class ApiService {
-  // Use 'http://127.0.0.1:5000/api' for Physical Android Phone connected via USB with 'adb reverse'
-  // Or your PC's local Wi-Fi IP (e.g., 'http://192.168.1.100:5000/api')
-  static const String baseUrl = 'http://127.0.0.1:5000/api';
+  // Candidate endpoints: USB (adb reverse), Laptop Wi-Fi IP, and Android Emulator
+  static const List<String> candidateBaseUrls = [
+    'http://127.0.0.1:5000/api',
+    'http://192.168.1.34:5000/api',
+    'http://10.0.2.2:5000/api',
+  ];
+
+  static String baseUrl = candidateBaseUrls.first;
 
   /// Uploads photo taken from camera to Node.js Express backend
   static Future<RecognitionResponse> uploadAndRecognize(File imageFile) async {
-    final uri = Uri.parse('$baseUrl/recognize');
-    final request = http.MultipartRequest('POST', uri);
+    dynamic lastException;
 
-    // Attach image
-    final multipartFile = await http.MultipartFile.fromPath(
-      'image',
-      imageFile.path,
-    );
-    request.files.add(multipartFile);
+    for (final candidate in candidateBaseUrls) {
+      try {
+        final uri = Uri.parse('$candidate/recognize');
+        final request = http.MultipartRequest('POST', uri);
 
-    try {
-      final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 25),
-      );
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200 || response.statusCode == 404) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        return RecognitionResponse.fromJson(data);
-      } else {
-        throw Exception(
-          'Server returned status code: ${response.statusCode} - ${response.body}',
+        // Attach image
+        final multipartFile = await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
         );
+        request.files.add(multipartFile);
+
+        final streamedResponse = await request.send().timeout(
+          const Duration(seconds: 15),
+        );
+        final response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode == 200 || response.statusCode == 404) {
+          baseUrl = candidate; // Cache the working endpoint
+          final Map<String, dynamic> data = json.decode(response.body);
+          return RecognitionResponse.fromJson(data);
+        } else {
+          throw Exception(
+            'Server returned status code: ${response.statusCode} - ${response.body}',
+          );
+        }
+      } catch (e) {
+        lastException = e;
+        // Try next candidate endpoint if it's a connection / socket failure
+        continue;
       }
-    } catch (e) {
-      throw Exception('Failed to connect to backend: $e');
     }
+
+    throw Exception(
+      'Failed to connect to backend on any endpoint (USB & Wi-Fi): $lastException',
+    );
   }
 }
 
