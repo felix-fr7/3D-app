@@ -8,9 +8,13 @@ echo ========================================================
 echo.
 
 echo [1/3] Setting up USB reverse port forwarding for Mobile...
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" reverse tcp:5000 tcp:5000
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" reverse tcp:8000 tcp:8000
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" reverse --list
+set ADB="%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
+if not exist %ADB% (
+    set ADB=adb
+)
+%ADB% reverse tcp:5000 tcp:5000
+%ADB% reverse tcp:8000 tcp:8000
+%ADB% reverse --list
 
 echo.
 echo [2/3] Launching Python OpenCV Recognizer (Port 8000)...

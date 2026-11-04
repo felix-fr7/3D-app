@@ -68,11 +68,5 @@ app.listen(PORT, '0.0.0.0', () => {
   initTables().catch((e) => {
     console.warn('[DB Init Notice]:', e.message);
   });
-
-  // Auto-verify and sync authentic cultural media into database
-  const districtController = require('./controllers/district.controller');
-  districtController.syncAuthenticMedia().catch((e) => {
-    console.warn('[Auto-Media-Sync] Notice:', e.message);
-  });
 });
 

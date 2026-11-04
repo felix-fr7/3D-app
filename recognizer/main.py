@@ -50,6 +50,16 @@ def get_references():
         "landmarks": list(matcher.reference_db.keys())
     }
 
+@app.get("/reload")
+@app.post("/reload")
+def reload_references():
+    matcher.load_all_references()
+    return {
+        "status": "reloaded",
+        "count": len(matcher.reference_db),
+        "landmarks": list(matcher.reference_db.keys())
+    }
+
 @app.post("/recognize")
 async def recognize_image(file: UploadFile = File(...)):
     """
@@ -101,7 +111,7 @@ async def register_reference(
 
 @app.post("/reload")
 def reload_references():
-    """Reload all reference landmarks from disk."""
+    """Reload all reference landmarks from disk."""                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
     matcher.load_all_references()
     return {
         "status": "reloaded",
